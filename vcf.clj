@@ -57,18 +57,20 @@
 	[filename]
 	(dataset (column-names filename) (map #(qual-as-float %) (parsed-data-lines filename))))
 
-(defn parse-info
+(defn create-map-for-info
 	[line]
 	(let [fields (split line #";")]
 		(map #(split % #"=") fields)))
 
-;(doseq [l (map parse-info (map :info (:rows a)))]
-;  (println ((apply hash-map (flatten (filter #(= (count %) 2) l ))) "DP")))
+
+
+(doseq [l (map create-map-for-info (map :info (:rows a)))]
+  (println ((apply hash-map (flatten (filter #(= (count %) 2) l ))) "DP")))
 
 
 (defn get-info
 	[tag dataset]
-	(doseq [l (map parse-info (map tag (:rows dataset)))]
+	(doseq [l (map create-map-for-info (map tag (:rows dataset)))]
 		(println ((apply hash-map (flatten (filter #(= (count %) 2) l))) "AA"))))
 
 ;;;;;;;;;;;;;;;;;;
