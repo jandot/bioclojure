@@ -41,7 +41,17 @@
   (replace-item split-line 5 (Float. (nth split-line 5))))
 
 (defn parsed-data-lines
-  ""
+  "Extract data elements from VCF file.
+  Returns: sequence of sequences
+  Example: (parsed-data-line \"example.vcf\"
+           ; => ((\"20\" \"14370\" \"rs6054257\" \"G\" \"A\" \"29\" \"0\"
+           ;      \"NS=58;DP=258;AF=0.786;DB;H2\"
+           ;      \"GT:GQ:DP:HQ\" \"0|0:48:1:51,51\" \"1|0:48:8:51,51\" \"1/1:43:5\")
+           ;     (\"20\" \"13330\" \".\" \"T\" \"A\" \"3\"
+           ;      \"q10\" \"NS=55;DP=202;AF=0.024\"
+           ;      \"GT:GQ:DP:HQ\" \"0|0:49:3:58,50\" \"0|1:3:5:65,3\" \"0/0:41:3\")
+           ;     (\"20\" \"1110696\" \"rs6040355\" \"A\" \"G,T\" \"67\" \"0\"
+           ;      \"NS=55;DP=276;AF=0.421,0.579;AA=T;DB\" \"GT:GQ:DP:HQ\" \"1|2:21:6:23,27\" \"2|1:2:0:18,2\" \"2/2:35:4\")"
   [filename]
   (map #(re-split #"\t" %) (data-lines filename)))
 
