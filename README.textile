@@ -1,0 +1,21 @@
+h1. BioClojure
+
+As big data becomes common place in genomics and genetics, a functional language such as clojure might just provide part of a solution for parallelizing data analysis.
+
+h2. Initial focus
+
+Initial focus is next-generation sequencing and sequence variation. This includes:
+
+* handling FASTQ and bam files (todo; maybe interfacing with Picard)
+* handling VCF files
+
+h2. Dependencies
+
+* incanter
+* clojure-contrib
+
+h2. Disclaimers
+
+* As I'm completely new to clojure, this library will be slow to grow, at least initially.
+* As I don't use clojure (much) in real-life work (yet), this library will be slow to grow, at least initially.
+* As I have to focus on real work, focus will be what I need: NGS.
