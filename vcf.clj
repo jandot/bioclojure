@@ -34,11 +34,11 @@
   [l n v]
   (concat (take n l) (list v) (drop (inc n) l)))
 
-(defn qual-as-float
-  "Casts quality score column (col 6) from string to float
+(defn element-as-float
+  "Casts nth element in sequence from string to float
   Returns: sequence"
-  [split-line]
-  (replace-item split-line 5 (Float. (nth split-line 5))))
+  [lst n]
+  (replace-item lst n (Float. (nth lst n))))
 
 (defn parsed-data-lines
   "Extract data elements from VCF file.
@@ -89,7 +89,7 @@
 (defn read-vcf
   "Read VCF file into incanter Dataset"
   [filename]
-  (dataset (column-names filename) (map #(qual-as-float %) (parsed-data-lines filename))))
+  (dataset (column-names filename) (map #(element-as-float % 5) (parsed-data-lines filename))))
 
 ;;;;;;;;;;;;;;;;;;
 
