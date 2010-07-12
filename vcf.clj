@@ -1,7 +1,7 @@
 (use '(incanter core io charts stats))
 (use '[clojure.contrib.duck-streams :only (read-lines reader)])
 (use '[clojure.contrib.str-utils])
-(use '[clojure.contrib.str-utils2 :only (lower-case)])
+(use '[clojure.contrib.str-utils2 :only (lower-case split)])
 
 (defn is-comment?
 	"Checks if argument is a comment (i.e. starts with a '#')"
@@ -73,7 +73,7 @@
 
 ;;;;;;;;;;;;;;;;;;
 
-(def a (read-vcf "../data/sample.vcf"))
+(def a (read-vcf "./data/sample.vcf"))
 
 
 ;;;;;;;;;;;;;;;;;;
