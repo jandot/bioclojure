@@ -62,12 +62,6 @@
 	(let [fields (split line #";")]
 		(map #(split % #"=") fields)))
 
-
-
-(doseq [l (map create-map-for-info (map :info (:rows a)))]
-  (println ((apply hash-map (flatten (filter #(= (count %) 2) l ))) "DP")))
-
-
 (defn get-info
 	[tag dataset]
 	(doseq [l (map create-map-for-info (map tag (:rows dataset)))]
@@ -78,6 +72,8 @@
 (def a (read-vcf "./data/sample.vcf"))
 
 
+(doseq [l (map create-map-for-info (map :info (:rows a)))]
+  (println ((apply hash-map (flatten (filter #(= (count %) 2) l ))) "DP")))
 ;;;;;;;;;;;;;;;;;;
 
 ;(use '[clojure.set])
