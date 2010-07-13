@@ -93,9 +93,10 @@
 
 ;;;;;;;;;;;;;;;;;;
 
+; For example: load a VCF file and print the sequence depth for all SNPs
 (def a (read-vcf "./data/sample.vcf"))
 
 (def all-info (map :info (:rows a)))
 
-(map #(get (create-map-for-info %) "DP") all-info)
+(println (map #(get (create-map-for-info %) "DP") all-info))
 
