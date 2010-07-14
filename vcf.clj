@@ -119,6 +119,8 @@
   [filename]
   (dataset (lazy-seq (column-names-from-file filename)) (map #(element-as-float % 5) (parsed-data-lines filename))))
 
+(defn tsv-header [ds] (flatten (conj (info-header ds) (take 7 (:column-names ds)))))
+
 (defn vcf2tsv
   "Convert a VCF file to a tab-delimited file"
   [input-file output-file]
@@ -134,3 +136,10 @@
 (pprint (all-info-tags a))
 
 (vcf2tsv "data/sample.vcf" "data/sample.tsv")
+
+(tsv-header a)
+
+(def first-seven-cols (take 7 (:column-names a)))
+
+(doseq [r (:rows a)]
+  (pprint (map #(get r %) first-seven-cols)))
