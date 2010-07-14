@@ -9,6 +9,10 @@ Initial focus is next-generation sequencing and sequence variation. This include
 * handling FASTQ and bam files (todo; maybe interfacing with Picard)
 * handling VCF files
 
+h2. Example
+
+  vcf2tsv NA12878.vcf NA12878.tsv
+
 h2. Dependencies
 
 * incanter
