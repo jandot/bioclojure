@@ -1,7 +1,7 @@
 (use '(incanter core io charts stats))
 (use '[clojure.contrib.duck-streams :only (read-lines reader)])
 (use '[clojure.contrib.str-utils])
-(use '[clojure.contrib.str-utils2 :only (lower-case split)])
+(use '[clojure.contrib.str-utils2 :only (lower-case upper-case split)])
 (use '[clojure.pprint])
 
 (defn is-comment?
@@ -68,11 +68,11 @@
   [filename]
   (re-sub #"#" "" (first (take 1 (drop-while is-file-header? (line-seq (reader filename)))))))
 
-(defn column-names
+(defn column-names-from-file
   "Get column names in VCF file
   Returns: sequence containing VCF column names"
   [filename]
-  (lazy-seq (map #(keyword %) (map #(lower-case %) (re-split #"\t" (re-gsub #":" "_" (column-header filename)))))))
+  (re-split #"\t" (re-gsub #":" "_" (column-header filename))))
 
 (defn create-map-for-info
   "Takes a string representing the INFO column for one variation and returns a 
@@ -91,7 +91,7 @@
   "Extract all data from the INFO column.
   Returns: sequence of strings"
   [ds]
-  (map :info (:rows ds)))
+  (map #(get % "INFO") (:rows ds)))
 
 (defn all-info-tags
   "Extracts the unique tags that are present in the INFO column. Note: only
@@ -117,7 +117,7 @@
 (defn read-vcf
   "Read VCF file into incanter Dataset"
   [filename]
-  (dataset (column-names filename) (map #(element-as-float % 5) (parsed-data-lines filename))))
+  (dataset (lazy-seq (column-names-from-file filename)) (map #(element-as-float % 5) (parsed-data-lines filename))))
 
 (defn vcf2tsv
   "Convert a VCF file to a tab-delimited file"
