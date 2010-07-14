@@ -2,6 +2,7 @@
 (use '[clojure.contrib.duck-streams :only (read-lines reader)])
 (use '[clojure.contrib.str-utils])
 (use '[clojure.contrib.str-utils2 :only (lower-case split)])
+(use '[clojure.pprint])
 
 (defn is-comment?
   "Checks if argument is a comment (i.e. starts with a '#').
@@ -86,6 +87,19 @@
   (let [fields (split line #";")]
     (apply hash-map (flatten (filter #(= (count %) 2) (map #(split % #"=") fields))))))
 
+(defn all-info-data
+  "Extract all data from the INFO column.
+  Returns: sequence of strings"
+  [ds]
+  (map :info (:rows ds)))
+
+(defn all-info-tags
+  "Extracts the unique tags that are present in the INFO column. Note: only
+  tags that have a value (e.g. *not* H3).
+  Returns: set"
+  [ds]
+  (set (flatten (map #(keys %) (map #(create-map-for-info %) (all-info-data ds))))))
+
 (defn read-vcf
   "Read VCF file into incanter Dataset"
   [filename]
@@ -96,7 +110,7 @@
 ; For example: load a VCF file and print the sequence depth for all SNPs
 (def a (read-vcf "./data/sample.vcf"))
 
-(def all-info (map :info (:rows a)))
 
-(println (map #(get (create-map-for-info %) "DP") all-info))
+(println (map #(get (create-map-for-info %) "DP") (all-info-data a)))
 
+(pprint (all-info-tags a))
