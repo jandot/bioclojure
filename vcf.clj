@@ -1,5 +1,5 @@
 (use '(incanter core io charts stats))
-(use '[clojure.contrib.duck-streams :only (read-lines reader)])
+(use '[clojure.contrib.duck-streams :only (read-lines reader with-out-writer)])
 (use '[clojure.contrib.str-utils])
 (use '[clojure.contrib.str-utils2 :only (lower-case upper-case split)])
 (use '[clojure.pprint])
@@ -119,12 +119,37 @@
   [filename]
   (dataset (lazy-seq (column-names-from-file filename)) (map #(element-as-float % 5) (parsed-data-lines filename))))
 
-(defn tsv-header [ds] (flatten (conj (info-header ds) (take 7 (:column-names ds)))))
+(defn tsv-header
+  "Returns vector with headers for the tab-delimited representation of VCF.
+  UNFINISHED: only does the first 7 columns at the moment.
+  Returns: vector"
+  [ds]
+  (flatten (conj (info-header ds) (take 7 (:column-names ds)))))
+
+(defn- get-values
+  "TODO: improve documentation....
+  Gets the values within a line for a given list of column names"
+  [m tags]
+  (map #(get m %) tags))
+
+(defn values
+  "TODO: improve documentation....
+  Gets the values for all lines for a given list of column names"
+  [ds tags]
+  (map #(get-values % tags) (:rows ds)))
 
 (defn vcf2tsv
-  "Convert a VCF file to a tab-delimited file"
+  "Convert a VCF file to a tab-delimited file
+  UNFINISHED: only does the first 7 columns at the moment"
   [input-file output-file]
-  (println "vcf2tsv: Not implemented yet"))
+  (let [ds (read-vcf input-file)
+        col-headers (take 7 (:column-names ds))
+        output (values ds col-headers) ; have to add the other field here as well: INFO-AA, INFO-AF, ..., SAMPLE-GT, SAMPLE-GQ, ...
+        lines (map #(str-join "\t" %) output)]
+    (with-out-writer output-file
+      (println (str-join "\n" (meta-information input-file)))
+      (println (str-join "\t" (tsv-header ds)))
+      (println (str-join "\n" lines)))))
 
 ;;;;;;;;;;;;;;;;;;
 
@@ -133,13 +158,8 @@
 
 (println (map #(extract-info-value % "DP") (all-info-data a)))
 
+; Print all the tags that appear in the INFO field in the whole file
 (pprint (all-info-tags a))
 
+; Convert a VCF file to TSV
 (vcf2tsv "data/sample.vcf" "data/sample.tsv")
-
-(tsv-header a)
-
-(def first-seven-cols (take 7 (:column-names a)))
-
-(doseq [r (:rows a)]
-  (pprint (map #(get r %) first-seven-cols)))
