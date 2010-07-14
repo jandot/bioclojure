@@ -11,7 +11,7 @@ Initial focus is next-generation sequencing and sequence variation. This include
 
 h2. Example
 
-  vcf2tsv NA12878.vcf NA12878.tsv
+bc. vcf2tsv NA12878.vcf NA12878.tsv
 
 h2. Dependencies
 
