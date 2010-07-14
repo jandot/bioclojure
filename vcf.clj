@@ -98,19 +98,39 @@
   tags that have a value (e.g. *not* H3).
   Returns: set"
   [ds]
-  (set (flatten (map #(keys %) (map #(create-map-for-info %) (all-info-data ds))))))
+  (sort (set (flatten (map #(keys %) (map #(create-map-for-info %) (all-info-data ds)))))))
+
+(defn info-header
+  "Create the header for the INFO columns: a sorted list of 'info-' concatenated to the tag.
+  Returns: list"
+  [ds]
+  (map #(str "info-" %) (all-info-tags ds)))
+
+(defn extract-info-value
+  "Extracts the value for a given tag from an INFO string. Returns an empty string if
+  that tag is not present in the INFO field.
+  Example: (extract-info-value \"DP=17;CQ=INTRONIC;AB=0.75\" \"DP\") ; => \"17\"
+  Returns: string"
+  [string tag]
+  (get (create-map-for-info string) tag ""))
 
 (defn read-vcf
   "Read VCF file into incanter Dataset"
   [filename]
   (dataset (column-names filename) (map #(element-as-float % 5) (parsed-data-lines filename))))
 
+(defn vcf2tsv
+  "Convert a VCF file to a tab-delimited file"
+  [input-file output-file]
+  (println "vcf2tsv: Not implemented yet"))
+
 ;;;;;;;;;;;;;;;;;;
 
 ; For example: load a VCF file and print the sequence depth for all SNPs
 (def a (read-vcf "./data/sample.vcf"))
 
-
-(println (map #(get (create-map-for-info %) "DP") (all-info-data a)))
+(println (map #(extract-info-value % "DP") (all-info-data a)))
 
 (pprint (all-info-tags a))
+
+(vcf2tsv "data/sample.vcf" "data/sample.tsv")
