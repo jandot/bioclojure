@@ -104,7 +104,7 @@
   "Create the header for the INFO columns: a sorted list of 'info-' concatenated to the tag.
   Returns: list"
   [ds]
-  (map #(str "info-" %) (all-info-tags ds)))
+  (map #(str "INFO-" %) (all-info-tags ds)))
 
 (defn extract-info-value
   "Extracts the value for a given tag from an INFO string. Returns an empty string if
