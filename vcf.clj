@@ -96,9 +96,21 @@
 (defn all-info-tags
   "Extracts the unique tags that are present in the INFO column. Note: only
   tags that have a value (e.g. *not* H3).
-  Returns: set"
+  Returns: sorted sequence"
   [ds]
   (sort (set (flatten (map #(keys %) (map #(create-map-for-info %) (all-info-data ds)))))))
+
+(defn all-format-data
+  "Extract all data from the FORMAT column.
+  Returns: sequence of strings"
+  [ds]
+  (map  #(get % "FORMAT") (:rows ds)))
+
+(defn all-format-tags
+  "Extracts the unique tags that are present in the FORMAT column
+  Returns: sorted sequence"
+  [ds]
+  (sort (set (flatten (map #(split % #":") (all-format-data ds))))))
 
 (defn info-header
   "Create the header for the INFO columns: a sorted list of 'info-' concatenated to the tag.
