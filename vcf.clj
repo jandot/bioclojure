@@ -87,10 +87,6 @@
   (let [fields (split line #";")]
     (apply hash-map (flatten (filter #(= (count %) 2) (map #(split % #"=") fields))))))
 
-;; (defn create-map-for-samples
-;;   [line]
-;;   (let [fields (split
-
 (defn all-info-data
   "Extract all data from the INFO column.
   Returns: sequence of strings"
@@ -128,13 +124,16 @@
   Example: (extract-info-value \"DP=17;CQ=INTRONIC;AB=0.75\" \"DP\") ; => \"17\"
   Returns: string"
   [string tag]
-  (get (create-map-for-info string) tag ""))
+  (get (create-map-for-info string) tag "empty"))
 
-(defn sample-names [ds] (sort (drop 9 (:column-names ds))))
+(defn sample-names
+  "Return sorted list of sample names"
+  [ds]
+  (sort (drop 9 (:column-names ds))))
 
 (defn sample-header
   "Create the header for the sample columns: a sorted list of sample-names concatenated
-  to the FORMAT strings
+  to the FORMAT strings: \"NA00001-DP NA00001-GT NA00002-DP NA00002-GT\"
   Returns: list"
   [ds]
   (for [s (sample-names ds) t (all-format-tags ds)] (str s "-" t)))
@@ -144,81 +143,43 @@
   [filename]
   (dataset (lazy-seq (column-names-from-file filename)) (map #(element-as-float % 5) (parsed-data-lines filename))))
 
-(defn tsv-header
-  "Returns vector with headers for the tab-delimited representation of VCF.
-  UNFINISHED: only does the first 7 columns at the moment.
-  Returns: vector"
+(defn get-line-part-sample
+  "Create the part of the output line that concerns a single sample"
+  [sample m ds]
+  (let [sample-data (split (get m sample) #":")
+        sample-tags (split (get m "FORMAT") #":")
+        sample-map (apply hash-map (interleave sample-tags sample-data))]
+    (map #(get sample-map % "empty") (all-format-tags ds))))
+
+(defn get-line-part-all-samples
+  "Create the part of the output line that concerns all samples"
+  [m ds]
+  (flatten (map #(get-line-part-sample % m ds) (sample-names ds))))
+
+(defn get-line
+  "Create a complete data output line"
+  [m ds]
+  (let [common-fields (map #(get m %) (take 7 (:column-names ds)))
+        info-fields (map #(extract-info-value (get m "INFO") %) (all-info-tags ds))
+        sample-fields (get-line-part-all-samples m ds)]
+    (flatten (conj sample-fields info-fields common-fields))))
+
+(defn get-all-lines
+  "Create all data output lines"
   [ds]
-  (flatten (conj (sample-header ds) (info-header ds) (take 7 (:column-names ds)))))
-
-(defn tsv-data-line
-  "Returns a single line from the tab-delimited representation of VCF.
-  Returns: string"
-  [m tags]
-  (map #(get m %) tags))
-
-(defn tsv-data-lines
-  "TODO: improve documentation....
-  Gets the data lines from the tab-delimited representation of VCF." 
-  [ds]
-  (let [universal-tags (take 7 (:column-names ds))
-        info-tags (all-info-tags ds)
-        format-tags (all-format-tags ds)
-        sample-names (sample-names ds)]
-    (pprint universal-tags)
-    (pprint info-tags)
-    (pprint format-tags)
-    (pprint sample-names)
-
-    (println (flatten (conj sample-names format-tags info-tags universal-tags)))
-    (println (str-join "\n" (str-join "\t" (map #(tsv-data-line % universal-tags) (:rows ds)))))
-
-
-; something with (sel a :cols (take 7 (:column-names a)))...
-;    (map #(tsv-data-line % tags) (:rows ds)))
-  ))
+  (map #(get-line % ds) (:rows ds)))
 
 (defn vcf2tsv
-  "Convert a VCF file to a tab-delimited file
-  UNFINISHED: only does the first 7 columns at the moment"
+  "Convert a VCF file to real tab-delimited format"
   [input-file output-file]
   (let [ds (read-vcf input-file)
-        col-headers (take 7 (:column-names ds))
-        output (tsv-data-lines ds col-headers) ; have to add the other field here as well: INFO-AA, INFO-AF, ..., SAMPLE-GT, SAMPLE-GQ, ...
-        lines (map #(str-join "\t" %) output)]
+        common-fields (take 7 (:column-names ds))
+        data-output (map #(str-join "\t" %) (get-all-lines ds))]
     (with-out-writer output-file
       (println (str-join "\n" (meta-information input-file)))
-      (println (str-join "\t" (tsv-header ds)))
-      (println (str-join "\n" lines)))))
+      (println (str-join "\t" (flatten (conj (sample-header ds) (all-info-tags ds) common-fields))))
+      (println (str-join "\n" data-output)))))
 
 ;;;;;;;;;;;;;;;;;;
 
-; For example: load a VCF file and print the sequence depth for all SNPs
-(def a (read-vcf "./data/sample_one_ind.vcf"))
-
-(println (map #(extract-info-value % "DP") (all-info-data a)))
-
-; Print all the tags that appear in the INFO field in the whole file
-(pprint (all-info-tags a))
-
-; Convert a VCF file to TSV
 (vcf2tsv "data/sample.vcf" "data/sample.tsv")
-
-(def one-row (first (:rows a)))
-(def data (split (get one-row "NA00001") #":"))
-(def tags (split (get one-row "FORMAT") #":"))
-(def h (apply hash-map (interleave tags data)))
-(pprint (all-format-tags a))
-(def common-data (map #(get one-row %) (take 7 (:column-names a))))
-(def sample-data (map #(get h % "empty") (all-format-tags a)))
-(def top-line (flatten (conj (sample-header a) (all-info-tags a) (take 7 (:column-names a)))))
-
-(defn get-line
-  [m ds]
-  (let [sample-data (split (get m "NA00001") #":")
-        sample-tags (split (get m "FORMAT") #":")
-        sample-map (apply hash-map (interleave sample-tags sample-data))
-        common-fields (map #(get m %) (take 7 (:column-names ds)))
-        info-fields (map #(extract-info-value (get m "INFO") %) (all-info-tags ds))
-        sample-fields (map #(get sample-map % "empty") (all-format-tags ds))]
-    (flatten (conj sample-fields info-fields common-fields))))
