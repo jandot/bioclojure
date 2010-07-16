@@ -1,8 +1,7 @@
-(use '(incanter core io charts stats))
-(use '[clojure.contrib.duck-streams :only (read-lines reader with-out-writer)])
+(use '(incanter core io))
+(use '[clojure.contrib.duck-streams :only (reader with-out-writer)])
 (use '[clojure.contrib.str-utils])
-(use '[clojure.contrib.str-utils2 :only (lower-case upper-case split)])
-(use '[clojure.pprint])
+(use '[clojure.contrib.str-utils2 :only (split)])
 
 (defn is-comment?
   "Checks if argument is a comment (i.e. starts with a '#').
@@ -187,7 +186,6 @@
       (println (str-join "\n" (meta-information input-file)))
       (println (str-join "\t" (flatten (conj (sample-header ds) (all-info-tags ds) common-fields))))
       (println (str-join "\n" (map #(str-join "\t" %) (get-all-lines ds)))))))
-
 ;;;;;;;;;;;;;;;;;;
 
 (vcf2tsv "data/sample.vcf" "data/sample.tsv")
