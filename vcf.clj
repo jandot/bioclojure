@@ -145,40 +145,43 @@
 
 (defn get-line-part-sample
   "Create the part of the output line that concerns a single sample"
-  [sample m ds]
+  [sample m ds aft]
   (let [sample-data (split (get m sample) #":")
         sample-tags (split (get m "FORMAT") #":")
         sample-map (apply hash-map (interleave sample-tags sample-data))]
-    (map #(get sample-map % "empty") (all-format-tags ds))))
+    (map #(get sample-map % "empty") aft)))
 
 (defn get-line-part-all-samples
   "Create the part of the output line that concerns all samples"
-  [m ds]
-  (flatten (map #(get-line-part-sample % m ds) (sample-names ds))))
+  [m ds aft sn]
+  (flatten (map #(get-line-part-sample % m ds aft) sn)))
 
 (defn get-line
   "Create a complete data output line"
-  [m ds]
-  (let [common-fields (map #(get m %) (take 7 (:column-names ds)))
-        info-fields (map #(extract-info-value (get m "INFO") %) (all-info-tags ds))
-        sample-fields (get-line-part-all-samples m ds)]
+  [m ds cn ait aft sn]
+  (let [common-fields (map #(get m %) cn)
+        info-fields (map #(extract-info-value (get m "INFO") %) ait)
+        sample-fields (get-line-part-all-samples m ds aft sn)]
     (flatten (conj sample-fields info-fields common-fields))))
 
 (defn get-all-lines
   "Create all data output lines"
   [ds]
-  (map #(get-line % ds) (:rows ds)))
+  (let [cn (take 7 (:column-names ds))
+        ait (all-info-tags ds)
+        aft (all-format-tags ds)
+        sn (sample-names ds)]
+    (map #(get-line % ds cn ait aft sn)  (:rows ds))))
 
 (defn vcf2tsv
   "Convert a VCF file to real tab-delimited format"
   [input-file output-file]
   (let [ds (read-vcf input-file)
-        common-fields (take 7 (:column-names ds))
-        data-output (map #(str-join "\t" %) (get-all-lines ds))]
+        common-fields (take 7 (:column-names ds))]
     (with-out-writer output-file
       (println (str-join "\n" (meta-information input-file)))
       (println (str-join "\t" (flatten (conj (sample-header ds) (all-info-tags ds) common-fields))))
-      (println (str-join "\n" data-output)))))
+      (println (str-join "\n" (map #(str-join "\t" %) (get-all-lines ds)))))))
 
 ;;;;;;;;;;;;;;;;;;
 
