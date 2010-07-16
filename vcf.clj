@@ -143,9 +143,14 @@
   [filename]
   (dataset (lazy-seq (column-names-from-file filename)) (map #(element-as-float % 5) (parsed-data-lines filename))))
 
+(defn get-line-part-info
+  "Create the part of the output line that concerns the INFO field"
+  [m ait]
+  (map #(extract-info-value (get m "INFO") %) ait))
+
 (defn get-line-part-sample
   "Create the part of the output line that concerns a single sample"
-  [sample m ds aft]
+  [sample m aft]
   (let [sample-data (split (get m sample) #":")
         sample-tags (split (get m "FORMAT") #":")
         sample-map (apply hash-map (interleave sample-tags sample-data))]
@@ -153,15 +158,15 @@
 
 (defn get-line-part-all-samples
   "Create the part of the output line that concerns all samples"
-  [m ds aft sn]
-  (flatten (map #(get-line-part-sample % m ds aft) sn)))
+  [m aft sn]
+  (flatten (map #(get-line-part-sample % m aft) sn)))
 
 (defn get-line
   "Create a complete data output line"
-  [m ds cn ait aft sn]
+  [m cn ait aft sn]
   (let [common-fields (map #(get m %) cn)
-        info-fields (map #(extract-info-value (get m "INFO") %) ait)
-        sample-fields (get-line-part-all-samples m ds aft sn)]
+        info-fields (get-line-part-info m ait)
+        sample-fields (get-line-part-all-samples m aft sn)]
     (flatten (conj sample-fields info-fields common-fields))))
 
 (defn get-all-lines
@@ -171,7 +176,7 @@
         ait (all-info-tags ds)
         aft (all-format-tags ds)
         sn (sample-names ds)]
-    (map #(get-line % ds cn ait aft sn)  (:rows ds))))
+    (map #(get-line % cn ait aft sn) (:rows ds))))
 
 (defn vcf2tsv
   "Convert a VCF file to real tab-delimited format"
