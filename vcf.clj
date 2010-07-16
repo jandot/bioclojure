@@ -27,18 +27,11 @@
   [filename]
   (drop-while is-comment? (line-seq (reader filename))))
 
-(defn replace-item
-  "Returns a list with the n-th item of l replaced by v.
-  Example: (replace-item [1 2 3 4] 2 7) ; => [1 2 7 4]
-  Returns: sequence"
-  [l n v]
-  (concat (take n l) (list v) (drop (inc n) l)))
-
 (defn element-as-float
   "Casts nth element in sequence from string to float
   Returns: sequence"
-  [lst n]
-  (replace-item lst n (Float. (nth lst n))))
+  [m n]
+  (assoc m n (Float. (nth m n))))
 
 (defn parsed-data-lines
   "Extract data elements from VCF file.
@@ -53,7 +46,7 @@
            ;     (\"20\" \"1110696\" \"rs6040355\" \"A\" \"G,T\" \"67\" \"0\"
            ;      \"NS=55;DP=276;AF=0.421,0.579;AA=T;DB\" \"GT:GQ:DP:HQ\" \"1|2:21:6:23,27\" \"2|1:2:0:18,2\" \"2/2:35:4\")"
   [filename]
-  (map #(re-split #"\t" %) (data-lines filename)))
+  (map #(vec (re-split #"\t" %)) (data-lines filename)))
 
 (defn meta-information
   "Returns header for file (i.e. all lines at top that start with '##')
