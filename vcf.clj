@@ -1,7 +1,6 @@
 (use '(incanter core io))
 (use '[clojure.contrib.duck-streams :only (reader with-out-writer)])
-(use '[clojure.contrib.str-utils])
-(use '[clojure.contrib.str-utils2 :only (split)])
+(use '[clojure.contrib.str-utils2 :only (split join replace replace-first)])
 
 (defn is-comment?
   "Checks if argument is a comment (i.e. starts with a '#').
@@ -27,12 +26,6 @@
   [filename]
   (drop-while is-comment? (line-seq (reader filename))))
 
-(defn element-as-float
-  "Casts nth element in sequence from string to float
-  Returns: sequence"
-  [m n]
-  (replace {n (Float. (nth m n))} m))
-
 (defn parsed-data-lines
   "Extract data elements from VCF file.
   Returns: sequence of sequences
@@ -46,7 +39,7 @@
            ;     (\"20\" \"1110696\" \"rs6040355\" \"A\" \"G,T\" \"67\" \"0\"
            ;      \"NS=55;DP=276;AF=0.421,0.579;AA=T;DB\" \"GT:GQ:DP:HQ\" \"1|2:21:6:23,27\" \"2|1:2:0:18,2\" \"2/2:35:4\")"
   [filename]
-  (map #(re-split #"\t" %) (data-lines filename)))
+  (map #(split % #"\t") (data-lines filename)))
 
 (defn meta-information
   "Returns header for file (i.e. all lines at top that start with '##')
@@ -58,26 +51,30 @@
   "Returns column header line of file
   Returns: string containing column header line of VCF file"
   [filename]
-  (re-sub #"#" "" (first (take 1 (drop-while is-file-header? (line-seq (reader filename)))))))
+  (replace-first (first (take 1 (drop-while is-file-header? (line-seq (reader filename))))) #"#" ""))
 
 (defn column-names-from-file
   "Get column names in VCF file
   Returns: sequence containing VCF column names"
   [filename]
-  (re-split #"\t" (re-gsub #":" "_" (column-header filename))))
+  (split (replace (column-header filename) #":" "_") #"\t"))
+
+(defn make-tag-value
+  "Adds a '=1' to a tag that does not have a value"
+  [s]
+  (replace s #"^([^=]+)$" #(str (% 1) "=true")))
 
 (defn create-map-for-info
   "Takes a string representing the INFO column for one variation and returns a 
-  map of tag-value pairs. In it current implementation any elements in the INFO
-  column that are *not* tag-value (e.g. 'H3') are discarded. The values are also
-  all stored as strings, whether or not they actually should represent integers
-  or floats.
+  map of tag-value pairs. Tags that do not have a value (e.g. H2) are assigned
+  a value of '1'. The values are all stored as strings, whether or not they 
+  actually should represent integers or floats.
   Returns: map
   Example: (create-map-for-info \"NS=58;DP=258;AF=0.786;DB;H2\")
-           ; => {\"NS\" \"58\", \"DP\" \"258\", \"AF\" \"0.786\"}"
+           ; => {\"NS\" \"58\", \"DP\" \"258\", \"AF\" \"0.786\", \"DB\" \"1\", \"H2\" \"1\"}"
   [line]
   (let [fields (split line #";")]
-    (apply hash-map (flatten (filter #(= (count %) 2) (map #(split % #"=") fields))))))
+    (apply hash-map (flatten (map #(split % #"=") (map #(make-tag-value %) fields))))))
 
 (defn all-info-data
   "Extract all data from the INFO column.
@@ -133,7 +130,7 @@
 (defn read-vcf
   "Read VCF file into incanter Dataset"
   [filename]
-  (dataset (lazy-seq (column-names-from-file filename)) (map #(element-as-float % 5) (parsed-data-lines filename))))
+  (dataset (lazy-seq (column-names-from-file filename)) (parsed-data-lines filename)))
 
 (defn get-line-part-info
   "Create the part of the output line that concerns the INFO field"
@@ -176,9 +173,10 @@
   (let [ds (read-vcf input-file)
         common-fields (take 7 (:column-names ds))]
     (with-out-writer output-file
-      (println (str-join "\n" (meta-information input-file)))
-      (println (str-join "\t" (flatten (conj (sample-header ds) (all-info-tags ds) common-fields))))
-      (println (str-join "\n" (map #(str-join "\t" %) (get-all-lines ds)))))))
+      (println (join "\n" (meta-information input-file)))
+      (println (join "\t" (flatten (conj (sample-header ds) (all-info-tags ds) common-fields))))
+      (println (join "\n" (map #(join "\t" %) (get-all-lines ds)))))))
+
 ;;;;;;;;;;;;;;;;;;
 
 (vcf2tsv "data/sample.vcf" "data/sample.tsv")
