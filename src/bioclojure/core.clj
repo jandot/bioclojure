@@ -1,6 +1,8 @@
-(use '(incanter core io))
-(use '[clojure.contrib.duck-streams :only (reader with-out-writer)])
-(use '[clojure.contrib.str-utils2 :only (split join replace replace-first)])
+(ns bioclojure.core
+  (:use [incanter core io])
+  (:require [clojure.contrib.duck-streams :as duck-streams]
+            [clojure.contrib.str-utils2 :as str-utils2])
+)
 
 (defn is-comment?
   "Checks if argument is a comment (i.e. starts with a '#').
@@ -18,13 +20,13 @@
   "Returns header for file (i.e. all lines at top that start with '#')
    Returns: sequence containing header lines"
   [filename]
-  (take-while is-comment? (line-seq (reader filename))))
+  (take-while is-comment? (line-seq (duck-streams/reader filename))))
 
 (defn data-lines
   "Returns data lines in file (i.e. all lines that do not start with '#')
   Returns: sequence containing data lines"
   [filename]
-  (drop-while is-comment? (line-seq (reader filename))))
+  (drop-while is-comment? (line-seq (duck-streams/reader filename))))
 
 (defn parsed-data-lines
   "Extract data elements from VCF file.
@@ -39,30 +41,30 @@
            ;     (\"20\" \"1110696\" \"rs6040355\" \"A\" \"G,T\" \"67\" \"0\"
            ;      \"NS=55;DP=276;AF=0.421,0.579;AA=T;DB\" \"GT:GQ:DP:HQ\" \"1|2:21:6:23,27\" \"2|1:2:0:18,2\" \"2/2:35:4\")"
   [filename]
-  (map #(split % #"\t") (data-lines filename)))
+  (map #(str-utils2/split % #"\t") (data-lines filename)))
 
 (defn meta-information
   "Returns header for file (i.e. all lines at top that start with '##')
   Returns: sequence containing meta-information of VCF file"
   [filename]
-  (take-while is-file-header? (line-seq (reader filename))))
+  (take-while is-file-header? (line-seq (duck-streams/reader filename))))
 
 (defn column-header
   "Returns column header line of file
   Returns: string containing column header line of VCF file"
   [filename]
-  (replace-first (first (take 1 (drop-while is-file-header? (line-seq (reader filename))))) #"#" ""))
+  (str-utils2/replace-first (first (take 1 (drop-while is-file-header? (line-seq (duck-streams/reader filename))))) #"#" ""))
 
 (defn column-names-from-file
   "Get column names in VCF file
   Returns: sequence containing VCF column names"
   [filename]
-  (split (replace (column-header filename) #":" "_") #"\t"))
+  (str-utils2/split (str-utils2/replace (column-header filename) #":" "_") #"\t"))
 
 (defn make-tag-value
   "Adds a '=1' to a tag that does not have a value"
   [s]
-  (replace s #"^([^=]+)$" #(str (% 1) "=true")))
+  (str-utils2/replace s #"^([^=]+)$" #(str (% 1) "=true")))
 
 (defn create-map-for-info
   "Takes a string representing the INFO column for one variation and returns a 
@@ -73,8 +75,8 @@
   Example: (create-map-for-info \"NS=58;DP=258;AF=0.786;DB;H2\")
            ; => {\"NS\" \"58\", \"DP\" \"258\", \"AF\" \"0.786\", \"DB\" \"1\", \"H2\" \"1\"}"
   [line]
-  (let [fields (split line #";")]
-    (apply hash-map (flatten (map #(split % #"=") (map #(make-tag-value %) fields))))))
+  (let [fields (str-utils2/split line #";")]
+    (apply hash-map (clojure.core/flatten (map #(str-utils2/split % #"=") (map #(make-tag-value %) fields))))))
 
 (defn all-info-data
   "Extract all data from the INFO column.
@@ -99,7 +101,7 @@
   "Extracts the unique tags that are present in the FORMAT column
   Returns: sorted sequence"
   [ds]
-  (sort (set (flatten (map #(split % #":") (all-format-data ds))))))
+  (sort (set (flatten (map #(str-utils2/split % #":") (all-format-data ds))))))
 
 (defn info-header
   "Create the header for the INFO columns: a sorted list of 'INFO-' concatenated to the tag.
@@ -140,8 +142,8 @@
 (defn get-line-part-sample
   "Create the part of the output line that concerns a single sample"
   [sample m aft]
-  (let [sample-data (split (get m sample) #":")
-        sample-tags (split (get m "FORMAT") #":")
+  (let [sample-data (str-utils2/split (get m sample) #":")
+        sample-tags (str-utils2/split (get m "FORMAT") #":")
         sample-map (apply hash-map (interleave sample-tags sample-data))]
     (map #(get sample-map % "empty") aft)))
 
@@ -172,11 +174,11 @@
   [input-file output-file]
   (let [ds (read-vcf input-file)
         common-fields (take 7 (:column-names ds))]
-    (with-out-writer output-file
-      (println (join "\n" (meta-information input-file)))
-      (println (join "\t" (flatten (conj (sample-header ds) (all-info-tags ds) common-fields))))
-      (println (join "\n" (map #(join "\t" %) (get-all-lines ds)))))))
+    (duck-streams/with-out-writer output-file
+      (println (str-utils2/join "\n" (meta-information input-file)))
+      (println (str-utils2/join "\t" (flatten (conj (sample-header ds) (all-info-tags ds) common-fields))))
+      (println (str-utils2/join "\n" (map #(str-utils2/join "\t" %) (get-all-lines ds)))))))
 
 ;;;;;;;;;;;;;;;;;;
 
-(vcf2tsv "data/sample.vcf" "data/sample.tsv")
+(vcf2tsv "../../data/sample.vcf" "../../data/sample.tsv")
