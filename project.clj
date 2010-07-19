@@ -1,4 +1,4 @@
-(defproject bioclojure "1.0.0-SNAPSHOT"
+(defproject bioclojure "0.0.1-SNAPSHOT"
   :description "A clojure library for the biological sciences"
   :dependencies [[org.clojure/clojure "1.1.0"]
                  [org.clojure/clojure-contrib "1.1.0"]
