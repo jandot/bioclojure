@@ -27,3 +27,6 @@ h2. Disclaimers
 * As I'm completely new to clojure, this library will be slow to grow, at least initially.
 * As I don't use clojure (much) in real-life work (yet), this library will be slow to grow, at least initially.
 * As I have to focus on real work, focus will be what I need: NGS.
+
+Copyright (c) 2010 Jan Aerts
+Licensed under the same terms as clojure
