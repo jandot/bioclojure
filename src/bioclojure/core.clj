@@ -46,13 +46,13 @@
   "Returns header for file (i.e. all lines at top that start with '##')
   Returns: sequence containing meta-information of VCF file"
   [filename]
-  (take-while is-file-header? (line-seq (reader filename))))
+  (take-while is-file-header? (header filename)))
 
 (defn column-header
   "Returns column header line of file
   Returns: string containing column header line of VCF file"
   [filename]
-  (str/replace-first (first (take 1 (drop-while is-file-header? (line-seq (reader filename))))) "#" ""))
+  (str/replace-first (first (take 1 (drop-while is-file-header? (header filename)))) "#" ""))
 
 (defn column-names
   "Get column names in VCF file
@@ -84,33 +84,33 @@
 (defn all-info-data
   "Extract all data from the INFO column.
   Returns: sequence of strings"
-  [filename]
-  (map #(get % "INFO") (extract-data filename)))
+  [data]
+  (map #(get % "INFO") data))
 
 (defn all-info-tags
   "Extracts the unique tags that are present in the INFO column. Note: only
   tags that have a value (e.g. *not* H3).
   Returns: sorted sequence"
-  [filename]
-  (sort (set (flatten (map #(keys %) (map #(create-map-for-info %) (all-info-data filename)))))))
+  [data]
+  (sort (set (flatten (map #(keys %) (map #(create-map-for-info %) (all-info-data data)))))))
 
 (defn all-format-data
   "Extract all data from the FORMAT column.
   Returns: sequence of strings"
-  [filename]
-  (map  #(get % "FORMAT") (extract-data filename)))
+  [data]
+  (map  #(get % "FORMAT") data))
 
 (defn all-format-tags
   "Extracts the unique tags that are present in the FORMAT column
   Returns: sorted sequence"
-  [filename]
-  (sort (set (flatten (map #(str/split % #":") (all-format-data filename))))))
+  [data]
+  (sort (set (flatten (map #(str/split % #":") (all-format-data data))))))
 
 (defn info-header
   "Create the header for the INFO columns: a sorted list of 'INFO-' concatenated to the tag.
   Returns: list"
-  [filename]
-  (map #(str "INFO-" %) (all-info-tags filename)))
+  [data]
+  (map #(str "INFO-" %) (all-info-tags data)))
 
 (defn extract-info-value
   "Extracts the value for a given tag from an INFO string. Returns an empty string if
@@ -129,13 +129,8 @@
   "Create the header for the sample columns: a sorted list of sample-names concatenated
   to the FORMAT strings: \"NA00001-DP NA00001-GT NA00002-DP NA00002-GT\"
   Returns: list"
-  [filename]
-  (for [s (sample-names filename) t (all-format-tags filename)] (str s "-" t)))
-
-(defn read-vcf
-  "Read VCF file into incanter Dataset"
-  [filename]
-  (parsed-data-lines filename))
+  [filename data]
+  (for [s (sample-names filename) t (all-format-tags data)] (str s "-" t)))
 
 (defn get-line-part-info
   "Create the part of the output line that concerns the INFO field"
@@ -165,22 +160,22 @@
 
 (defn get-all-lines
   "Create all data output lines"
-  [filename]
+  [filename data]
   (let [cn (take 7 (column-names filename))
-        ait (all-info-tags filename)
-        aft (all-format-tags filename)
+        ait (all-info-tags data)
+        aft (all-format-tags data)
         sn (sample-names filename)]
-    (map #(get-line % cn ait aft sn) (extract-data filename))))
+    (map #(get-line % cn ait aft sn) data)))
 
 (defn vcf2tsv
   "Convert a VCF file to real tab-delimited format"
   [input-file output-file]
-  (let [dataset (extract-data input-file)
+  (let [data (extract-data input-file)
         common-fields (take 7 (column-names input-file))]
     (with-out-writer output-file
       (println (str/join "\n" (meta-information input-file)))
-      (println (str/join "\t" (flatten (conj (sample-header input-file) (all-info-tags input-file) common-fields))))
-      (println (str/join "\n" (map #(str/join "\t" %) (get-all-lines input-file)))))))
+      (println (str/join "\t" (flatten (conj (sample-header input-file data) (all-info-tags data) common-fields))))
+      (println (str/join "\n" (map #(str/join "\t" %) (get-all-lines input-file data)))))))
 
 ;;;;;;;;;;;;;;;;;;
 
