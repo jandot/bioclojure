@@ -175,7 +175,7 @@
     (with-out-writer output-file
       (println (str/join "\n" (meta-information input-file)))
       (println (str/join "\t" (flatten (conj (sample-header input-file data) (all-info-tags data) common-fields))))
-      (println (str/join "\n" (map #(str/join "\t" %) (get-all-lines input-file data)))))))
+      (println (str/join "\n" (pmap #(str/join "\t" %) (get-all-lines input-file data)))))))
 
 ;;;;;;;;;;;;;;;;;;
 
