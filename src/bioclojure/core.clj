@@ -1,7 +1,6 @@
 (ns bioclojure.core
-  (:use [incanter core io]
-        [clojure.contrib.io :only (reader with-out-writer)]
-        [clojure.contrib.string :only (split replace-str replace-first-str join)])
+  (:use [clojure.contrib.io :only (reader with-out-writer)])
+  (:require [clojure.string :as str])
 )
 
 (defn is-comment?
@@ -41,7 +40,7 @@
            ;     (\"20\" \"1110696\" \"rs6040355\" \"A\" \"G,T\" \"67\" \"0\"
            ;      \"NS=55;DP=276;AF=0.421,0.579;AA=T;DB\" \"GT:GQ:DP:HQ\" \"1|2:21:6:23,27\" \"2|1:2:0:18,2\" \"2/2:35:4\")"
   [filename]
-  (map #(split #"\t" %) (data-lines filename)))
+  (map #(str/split % #"\t") (data-lines filename)))
 
 (defn meta-information
   "Returns header for file (i.e. all lines at top that start with '##')
@@ -53,18 +52,18 @@
   "Returns column header line of file
   Returns: string containing column header line of VCF file"
   [filename]
-  (replace-first-str #"#" "" (first (take 1 (drop-while is-file-header? (line-seq (reader filename)))))))
+  (str/replace-first (first (take 1 (drop-while is-file-header? (line-seq (reader filename))))) "#" ""))
 
-(defn column-names-from-file
+(defn column-names
   "Get column names in VCF file
   Returns: sequence containing VCF column names"
   [filename]
-  (split #"\t" (replace-str #":" "_" (column-header filename))))
+  (str/split (str/replace (column-header filename) ":" "_") #"\t"))
 
 (defn make-tag-value
   "Adds a '=1' to a tag that does not have a value"
   [s]
-  (replace-str #"^([^=]+)$" #(str (% 1) "=true") s))
+  (str/replace s #"^([^=]+)$" #(str (% 1) "=true")))
 
 (defn create-map-for-info
   "Takes a string representing the INFO column for one variation and returns a 
@@ -75,39 +74,43 @@
   Example: (create-map-for-info \"NS=58;DP=258;AF=0.786;DB;H2\")
            ; => {\"NS\" \"58\", \"DP\" \"258\", \"AF\" \"0.786\", \"DB\" \"1\", \"H2\" \"1\"}"
   [line]
-  (let [fields (split #";" line)]
-    (apply hash-map (clojure.core/flatten (map #(split #"=" %) (map #(make-tag-value %) fields))))))
+  (let [fields (str/split line #";")]
+    (apply hash-map (clojure.core/flatten (map #(str/split % #"=") (map #(make-tag-value %) fields))))))
+
+(defn extract-data
+  [filename]
+  (map #(apply hash-map (interleave (column-names filename) %)) (parsed-data-lines filename)))
 
 (defn all-info-data
   "Extract all data from the INFO column.
   Returns: sequence of strings"
-  [ds]
-  (map #(get % "INFO") (:rows ds)))
+  [filename]
+  (map #(get % "INFO") (extract-data filename)))
 
 (defn all-info-tags
   "Extracts the unique tags that are present in the INFO column. Note: only
   tags that have a value (e.g. *not* H3).
   Returns: sorted sequence"
-  [ds]
-  (sort (set (flatten (map #(keys %) (map #(create-map-for-info %) (all-info-data ds)))))))
+  [filename]
+  (sort (set (flatten (map #(keys %) (map #(create-map-for-info %) (all-info-data filename)))))))
 
 (defn all-format-data
   "Extract all data from the FORMAT column.
   Returns: sequence of strings"
-  [ds]
-  (map  #(get % "FORMAT") (:rows ds)))
+  [filename]
+  (map  #(get % "FORMAT") (extract-data filename)))
 
 (defn all-format-tags
   "Extracts the unique tags that are present in the FORMAT column
   Returns: sorted sequence"
-  [ds]
-  (sort (set (flatten (map #(split #":" %) (all-format-data ds))))))
+  [filename]
+  (sort (set (flatten (map #(str/split % #":") (all-format-data filename))))))
 
 (defn info-header
   "Create the header for the INFO columns: a sorted list of 'INFO-' concatenated to the tag.
   Returns: list"
-  [ds]
-  (map #(str "INFO-" %) (all-info-tags ds)))
+  [filename]
+  (map #(str "INFO-" %) (all-info-tags filename)))
 
 (defn extract-info-value
   "Extracts the value for a given tag from an INFO string. Returns an empty string if
@@ -119,20 +122,20 @@
 
 (defn sample-names
   "Return sorted list of sample names"
-  [ds]
-  (sort (drop 9 (:column-names ds))))
+  [filename]
+  (sort (drop 9 (column-names filename))))
 
 (defn sample-header
   "Create the header for the sample columns: a sorted list of sample-names concatenated
   to the FORMAT strings: \"NA00001-DP NA00001-GT NA00002-DP NA00002-GT\"
   Returns: list"
-  [ds]
-  (for [s (sample-names ds) t (all-format-tags ds)] (str s "-" t)))
+  [filename]
+  (for [s (sample-names filename) t (all-format-tags filename)] (str s "-" t)))
 
 (defn read-vcf
   "Read VCF file into incanter Dataset"
   [filename]
-  (dataset (lazy-seq (column-names-from-file filename)) (parsed-data-lines filename)))
+  (parsed-data-lines filename))
 
 (defn get-line-part-info
   "Create the part of the output line that concerns the INFO field"
@@ -142,8 +145,8 @@
 (defn get-line-part-sample
   "Create the part of the output line that concerns a single sample"
   [sample m aft]
-  (let [sample-data (split #":" (get m sample))
-        sample-tags (split #":" (get m "FORMAT"))
+  (let [sample-data (str/split (get m sample) #":")
+        sample-tags (str/split (get m "FORMAT") #":")
         sample-map (apply hash-map (interleave sample-tags sample-data))]
     (map #(get sample-map % "empty") aft)))
 
@@ -162,22 +165,22 @@
 
 (defn get-all-lines
   "Create all data output lines"
-  [ds]
-  (let [cn (take 7 (:column-names ds))
-        ait (all-info-tags ds)
-        aft (all-format-tags ds)
-        sn (sample-names ds)]
-    (map #(get-line % cn ait aft sn) (:rows ds))))
+  [filename]
+  (let [cn (take 7 (column-names filename))
+        ait (all-info-tags filename)
+        aft (all-format-tags filename)
+        sn (sample-names filename)]
+    (map #(get-line % cn ait aft sn) (extract-data filename))))
 
 (defn vcf2tsv
   "Convert a VCF file to real tab-delimited format"
   [input-file output-file]
-  (let [ds (read-vcf input-file)
-        common-fields (take 7 (:column-names ds))]
+  (let [dataset (extract-data input-file)
+        common-fields (take 7 (column-names input-file))]
     (with-out-writer output-file
-      (println (join "\n" (meta-information input-file)))
-      (println (join "\t" (flatten (conj (sample-header ds) (all-info-tags ds) common-fields))))
-      (println (join "\n" (map #(join "\t" %) (get-all-lines ds)))))))
+      (println (str/join "\n" (meta-information input-file)))
+      (println (str/join "\t" (flatten (conj (sample-header input-file) (all-info-tags input-file) common-fields))))
+      (println (str/join "\n" (map #(str/join "\t" %) (get-all-lines input-file)))))))
 
 ;;;;;;;;;;;;;;;;;;
 
