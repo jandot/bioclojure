@@ -78,8 +78,8 @@
     (apply hash-map (clojure.core/flatten (map #(str/split % #"=") (map #(make-tag-value %) fields))))))
 
 (defn extract-data
-  [filename]
-  (map #(apply hash-map (interleave (column-names filename) %)) (parsed-data-lines filename)))
+  [filename cn]
+  (map #(apply hash-map (interleave cn %)) (parsed-data-lines filename)))
 
 (defn all-info-data
   "Extract all data from the INFO column.
@@ -92,7 +92,7 @@
   tags that have a value (e.g. *not* H3).
   Returns: sorted sequence"
   [data]
-  (sort (set (flatten (map #(keys %) (map #(create-map-for-info %) (all-info-data data)))))))
+  (sort (set (map #(str/replace-first % #"=.*" "") (map #(str/split % #";") (all-info-data data))))))
 
 (defn all-format-data
   "Extract all data from the FORMAT column.
@@ -109,8 +109,8 @@
 (defn info-header
   "Create the header for the INFO columns: a sorted list of 'INFO-' concatenated to the tag.
   Returns: list"
-  [data]
-  (map #(str "INFO-" %) (all-info-tags data)))
+  [ait]
+  (map #(str "INFO-" %) ait))
 
 (defn extract-info-value
   "Extracts the value for a given tag from an INFO string. Returns an empty string if
@@ -122,15 +122,15 @@
 
 (defn sample-names
   "Return sorted list of sample names"
-  [filename]
-  (sort (drop 9 (column-names filename))))
+  [cn]
+  (sort (drop 9 cn)))
 
 (defn sample-header
   "Create the header for the sample columns: a sorted list of sample-names concatenated
   to the FORMAT strings: \"NA00001-DP NA00001-GT NA00002-DP NA00002-GT\"
   Returns: list"
-  [filename data]
-  (for [s (sample-names filename) t (all-format-tags data)] (str s "-" t)))
+  [filename data sn aft]
+  (for [s sn t aft] (str s "-" t)))
 
 (defn get-line-part-info
   "Create the part of the output line that concerns the INFO field"
@@ -160,22 +160,22 @@
 
 (defn get-all-lines
   "Create all data output lines"
-  [filename data]
-  (let [cn (take 7 (column-names filename))
-        ait (all-info-tags data)
-        aft (all-format-tags data)
-        sn (sample-names filename)]
-    (map #(get-line % cn ait aft sn) data)))
+  [data cn sn ait aft]
+  (map #(get-line % cn ait aft sn) data))
 
 (defn vcf2tsv
   "Convert a VCF file to real tab-delimited format"
   [input-file output-file]
-  (let [data (extract-data input-file)
-        common-fields (take 7 (column-names input-file))]
+  (let [cn (column-names input-file)
+        data (extract-data input-file cn)
+        common-fields (take 7 cn)
+        sn (sample-names cn)
+        aft (all-format-tags data)
+        ait (all-info-tags data)]
     (with-out-writer output-file
       (println (str/join "\n" (meta-information input-file)))
-      (println (str/join "\t" (flatten (conj (sample-header input-file data) (info-header data) common-fields))))
-      (println (str/join "\n" (pmap #(str/join "\t" %) (get-all-lines input-file data)))))))
+      (println (str/join "\t" (flatten (conj (sample-header input-file data sn aft) (info-header ait) common-fields))))
+      (println (str/join "\n" (map #(str/join "\t" %) (get-all-lines data cn sn ait aft)))))))
 
 ;;;;;;;;;;;;;;;;;;
 
