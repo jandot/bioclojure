@@ -1,4 +1,4 @@
-(ns bioclojure.core
+(ns bioclojure.vcf
   (:use [clojure.contrib.io :only (reader with-out-writer)])
   (:require [clojure.string :as str])
 )
@@ -177,6 +177,3 @@
       (println (str/join "\t" (flatten (conj (sample-header input-file data sn aft) (info-header ait) common-fields))))
       (println (str/join "\n" (map #(str/join "\t" %) (get-all-lines data cn sn ait aft)))))))
 
-;;;;;;;;;;;;;;;;;;
-
-;(vcf2tsv "../../data/sample.vcf" "../../data/sample.tsv")
