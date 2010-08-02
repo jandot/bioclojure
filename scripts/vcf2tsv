@@ -1,0 +1,4 @@
+#!/bin/sh 
+java -cp "../lib/*":"../src" clojure.main -e "(require 'bioclojure.vcf)
+(bioclojure.vcf/vcf2tsv \"../data/sample.vcf\" \"../data/sample.tsv\")"
+
