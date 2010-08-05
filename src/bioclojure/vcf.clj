@@ -152,16 +152,16 @@
 
 (defn get-line
   "Create a complete data output line"
-  [m cn ait aft sn]
-  (let [common-fields (map #(get m %) cn)
-        info-fields (get-line-part-info m ait)
-        sample-fields (get-line-part-all-samples m aft sn)]
-    (flatten (conj sample-fields info-fields common-fields))))
+  [m common-fields ait aft sn]
+  (let [common-data (map #(get m %) common-fields)
+        info-data (get-line-part-info m ait)
+        sample-data (get-line-part-all-samples m aft sn)]
+    (flatten (conj sample-data info-data common-data))))
 
 (defn get-all-lines
   "Create all data output lines"
-  [data cn sn ait aft]
-  (map #(get-line % cn ait aft sn) data))
+  [data common-fields sn ait aft]
+  (map #(get-line % common-fields ait aft sn) data))
 
 (defn vcf2tsv
   "Convert a VCF file to real tab-delimited format"
@@ -175,4 +175,4 @@
     (with-out-writer output-file
       (println (str/join "\n" (meta-information input-file)))
       (println (str/join "\t" (flatten (conj (sample-header input-file data sn aft) (info-header ait) common-fields))))
-      (println (str/join "\n" (map #(str/join "\t" %) (get-all-lines data cn sn ait aft)))))))
+      (println (str/join "\n" (map #(str/join "\t" %) (get-all-lines data common-fields sn ait aft)))))))
