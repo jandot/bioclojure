@@ -1,6 +1,6 @@
 #!/bin/sh 
 java -cp "../lib/*":"../src":$CLASSPATH clojure.main -e "
 (use '[bioclojure vcf])
-(vcf2tsv \"../data/sample.vcf\" \"../data/sample.tsv\")
+(vcf2tsv \"$1\" \"$2\")
 "
 
