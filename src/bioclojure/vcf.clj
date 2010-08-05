@@ -92,7 +92,7 @@
   tags that have a value (e.g. *not* H3).
   Returns: sorted sequence"
   [data]
-  (sort (set (map #(str/replace-first % #"=.*" "") (map #(str/split % #";") (all-info-data data))))))
+  (sort (set (map #(str/replace-first % #"=.*" "") (flatten (map #(str/split % #";") (all-info-data data)))))))
 
 (defn all-format-data
   "Extract all data from the FORMAT column.
@@ -176,4 +176,3 @@
       (println (str/join "\n" (meta-information input-file)))
       (println (str/join "\t" (flatten (conj (sample-header input-file data sn aft) (info-header ait) common-fields))))
       (println (str/join "\n" (map #(str/join "\t" %) (get-all-lines data cn sn ait aft)))))))
-
