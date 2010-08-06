@@ -1,5 +1,6 @@
 (ns bioclojure.vcf
-  (:use [clojure.contrib.io :only (reader with-out-writer)])
+  (:use [incanter core io stats charts]
+        [clojure.contrib.io :only (reader with-out-writer)])
   (:require [clojure.string :as str])
 )
 

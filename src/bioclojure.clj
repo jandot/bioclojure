@@ -3,7 +3,8 @@
 ;; - lein compile
 ;; - lein uberjar
 (ns bioclojure
-  (:use [bioclojure.vcf])
+  (:use [incanter core io stats charts]
+        [bioclojure.vcf])
   (:gen-class)
 )
 
