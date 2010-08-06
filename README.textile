@@ -9,17 +9,24 @@ Initial focus is next-generation sequencing and sequence variation. This include
 * handling FASTQ and bam files (todo; maybe interfacing with Picard)
 * handling VCF files
 
+h2. Installation
+
+Either just download the latest jar file, or compile the jar yourself:
+
+bc. lein deps
+lein compile
+lein uberjar
+
 h2. Example
 
 This library includes a function to convert VCF files to tab-delimited format. This conversion includes *all* fields that are defined in the file; no information is omitted (i.e. all INFO tags are included).
 
 Caution: this does not work for VCFv4 yet. That version allows for genotype fields to be dropped entirely.
 
-bc. vcf2tsv NA12878.vcf NA12878.tsv
+bc. java -jar bioclojure.jar vcf2tsv NA12878.vcf NA12878.tsv
 
 h2. Dependencies
 
-* incanter
 * clojure-contrib
 
 h2. Disclaimers
