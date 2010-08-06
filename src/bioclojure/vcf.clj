@@ -3,6 +3,13 @@
   (:require [clojure.string :as str])
 )
 
+
+(defn- parse-string [value]
+  (try (Integer/parseInt value)
+    (catch NumberFormatException _
+      (try (Double/parseDouble value)
+        (catch NumberFormatException _ value)))))
+
 (defn is-comment?
   "Checks if argument is a comment (i.e. starts with a '#').
    Returns: boolean."
@@ -156,7 +163,7 @@
   (let [common-data (map #(get m %) common-fields)
         info-data (get-line-part-info m ait)
         sample-data (get-line-part-all-samples m aft sn)]
-    (flatten (conj sample-data info-data common-data))))
+    (map parse-string (flatten (conj sample-data info-data common-data)))))
 
 (defn get-all-lines
   "Create all data output lines"
@@ -176,3 +183,20 @@
       (println (str/join "\n" (meta-information input-file)))
       (println (str/join "\t" (flatten (conj (sample-header input-file data sn aft) (info-header ait) common-fields))))
       (println (str/join "\n" (map #(str/join "\t" %) (get-all-lines data common-fields sn ait aft)))))))
+
+(defn load-vcf
+  "Creates an incanter dataset based on a VCF file
+  Example usage:
+    (def a (load-vcf \"data/sample.vcf\")
+    (with-data a
+      (view (histogram ($ :QUAL))))"
+  [input-file]
+  (let [cn (column-names input-file)
+        data (extract-data input-file cn)
+        common-fields (take 7 cn)
+        sn (sample-names cn)
+        aft (all-format-tags data)
+        ait (all-info-tags data)
+        dataset-col-names (flatten (conj (sample-header input-file data sn aft) (info-header ait) common-fields))
+        dataset-rows (get-all-lines data common-fields sn ait aft)]
+    (dataset dataset-col-names dataset-rows)))
