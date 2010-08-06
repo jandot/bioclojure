@@ -1,6 +1,2 @@
 #!/bin/sh 
-java -cp "../lib/*":"../src":$CLASSPATH clojure.main -e "
-(use '[bioclojure vcf])
-(vcf2tsv \"$1\" \"$2\")
-"
-
+java -jar ../bioclojure-0.0.1-SNAPSHOT-standalone.jar vcf2tsv "$@"
