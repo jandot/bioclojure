@@ -19,11 +19,29 @@ lein uberjar
 
 h2. Example
 
+h3. Convert VCF file to tab-delimited
+
 This library includes a function to convert VCF files to tab-delimited format. This conversion includes *all* fields that are defined in the file; no information is omitted (i.e. all INFO tags are included).
 
 Caution: this does not work for VCFv4 yet. That version allows for genotype fields to be dropped entirely.
 
 bc. java -jar bioclojure.jar vcf2tsv NA12878.vcf NA12878.tsv
+
+h3. Load VCF file into incanter and show histogram of quality scores
+
+bc. cljr repl
+> (use 'bioclojure)
+> (ns bioclojure)
+> (def a (load-vcf "./data/sample.vcf"))
+> (with-data a
+>   (view (histogram ($ :QUAL))))
+
+h4. What about log-scales?
+
+At the moment incanter charts don't provide logarithmic scales yet. To do this yourself, do
+
+bc. > (with-data a
+>   (view (histogram (map #(log %) ($ :QUAL)))))
 
 h2. Dependencies
 
