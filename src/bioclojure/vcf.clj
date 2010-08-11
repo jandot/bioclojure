@@ -1,9 +1,8 @@
 (ns bioclojure.vcf
   (:use [incanter core io stats charts]
-        [clojure.contrib.io :only (reader with-out-writer)])
+        [clojure.contrib.io :only (reader)])
   (:require [clojure.string :as str])
 )
-
 
 (defn- parse-string [value]
   (try (Integer/parseInt value)
@@ -173,17 +172,16 @@
 
 (defn vcf2tsv
   "Convert a VCF file to real tab-delimited format"
-  [input-file output-file]
+  [input-file]
   (let [cn (column-names input-file)
         data (extract-data input-file cn)
         common-fields (take 7 cn)
         sn (sample-names cn)
         aft (all-format-tags data)
         ait (all-info-tags data)]
-    (with-out-writer output-file
       (println (str/join "\n" (meta-information input-file)))
       (println (str/join "\t" (flatten (conj (sample-header input-file data sn aft) (info-header ait) common-fields))))
-      (println (str/join "\n" (map #(str/join "\t" %) (get-all-lines data common-fields sn ait aft)))))))
+      (println (str/join "\n" (map #(str/join "\t" %) (get-all-lines data common-fields sn ait aft))))))
 
 (defn load-vcf
   "Creates an incanter dataset based on a VCF file
