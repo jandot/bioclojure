@@ -125,7 +125,7 @@
   Example: (extract-info-value \"DP=17;CQ=INTRONIC;AB=0.75\" \"DP\") ; => \"17\"
   Returns: string"
   [string tag]
-  (get (create-map-for-info string) tag "empty"))
+  (get (create-map-for-info string) tag ""))
 
 (defn sample-names
   "Return sorted list of sample names"
@@ -150,7 +150,7 @@
   (let [sample-data (str/split (get m sample) #":")
         sample-tags (str/split (get m "FORMAT") #":")
         sample-map (apply hash-map (interleave sample-tags sample-data))]
-    (map #(get sample-map % "empty") aft)))
+    (map #(get sample-map % "") aft)))
 
 (defn get-line-part-all-samples
   "Create the part of the output line that concerns all samples"
