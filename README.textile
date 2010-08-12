@@ -38,6 +38,8 @@ bc. cljr repl
 > (with-data a
 >   (view (histogram ($ :QUAL))))
 
+!http://www.flickr.com/photos/82932180@N00/?saved=1(Example histogram)!
+
 h4. What about log-scales?
 
 At the moment incanter charts don't provide logarithmic scales yet. To do this yourself, do
