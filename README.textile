@@ -38,7 +38,7 @@ bc. cljr repl
 > (with-data a
 >   (view (histogram ($ :QUAL))))
 
-!http://www.flickr.com/photos/82932180@N00/?saved=1(Example histogram)!
+!http://farm5.static.flickr.com/4100/4886063426_295002134d.jpg(Example histogram)!
 
 h4. What about log-scales?
 
