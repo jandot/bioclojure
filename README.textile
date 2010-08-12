@@ -1,13 +1,13 @@
 h1. BioClojure
 
-As big data becomes common place in genomics and genetics, a functional language such as clojure might just provide part of a solution for parallelizing data analysis.
+BioClojure is (the seed of) a collection of functions that provides bioinformatics functionality to the <a href="http://clojure.org">clojure</a> programming language. Clojure is a young functional programming language that runs on the JVM. BioClojure uses <a href="http://incanter.org">incanter</a> to provide R-like statistical functionality.
 
 h2. Initial focus
 
 Initial focus is next-generation sequencing and sequence variation. This includes:
 
-* handling FASTQ and bam files (todo; maybe interfacing with Picard)
-* handling VCF files
+* handling FASTQ and bam files (todo; probably interfacing with Picard)
+* handling VCF files (done)
 
 h2. Installation
 
@@ -17,15 +17,17 @@ bc. lein deps
 lein compile
 lein uberjar
 
+"lein deps" will automatically download all dependencies.
+
 h2. Example
 
 h3. Convert VCF file to tab-delimited
 
 This library includes a function to convert VCF files to tab-delimited format. This conversion includes *all* fields that are defined in the file; no information is omitted (i.e. all INFO tags are included).
 
-Caution: this does not work for VCFv4 yet. That version allows for genotype fields to be dropped entirely.
+Caution: this does not work for VCFv4 yet. That version allows for genotype fields to be dropped entirely. (Is simple to implement, but no time)
 
-bc. java -jar bioclojure.jar vcf2tsv NA12878.vcf NA12878.tsv
+bc. ./scripts/vcf2tsv NA12878.vcf > NA12878.tsv
 
 h3. Load VCF file into incanter and show histogram of quality scores
 
@@ -45,7 +47,10 @@ bc. > (with-data a
 
 h2. Dependencies
 
+Are automatically installed with "lein deps"
+
 * clojure-contrib
+* incanter
 
 h2. Disclaimers
 
