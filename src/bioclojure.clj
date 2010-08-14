@@ -21,6 +21,6 @@
   [command & args]
   (case command
         "help" (println help-string)
-        "vcf2tsv" (vcf2tsv (first args) (second args))
+        "vcf2tsv" (vcf2tsv (first args))
         "say-hi" (println "Hi there! This actually works...")
         (println "Unknown command")))
