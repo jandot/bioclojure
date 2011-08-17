@@ -74,6 +74,13 @@
   [s]
   (str/replace s #"^([^=]+)$" #(str (% 1) "=true")))
 
+(defn- info-split [^String s]
+  "Splits an info entry into tag and value, setting value to 1 if not present."
+  (let [idx (.indexOf s 61)] 
+    (if (> idx 0)
+      [(.substring s 0 idx) (.substring s (+ idx 1))]
+      [s "true"])))
+
 (defn create-map-for-info
   "Takes a string representing the INFO column for one variation and returns a 
   map of tag-value pairs. Tags that do not have a value (e.g. H2) are assigned
@@ -84,7 +91,7 @@
            ; => {\"NS\" \"58\", \"DP\" \"258\", \"AF\" \"0.786\", \"DB\" \"1\", \"H2\" \"1\"}"
   [line]
   (let [fields (str/split line #";")]
-    (into {} (map #(str/split % #"=") (map #(make-tag-value %) fields)))))
+    (into {} (map info-split fields))))
 
 (defn extract-data
   [filename cn]
@@ -141,10 +148,15 @@
   [filename data sn aft]
   (for [s sn t aft] (str s "-" t)))
 
+; (defn get-line-part-info
+;  "Create the part of the output line that concerns the INFO field"
+;  [m ait]
+;  (map #(extract-info-value (get m "INFO") %) ait))
+
 (defn get-line-part-info
-  "Create the part of the output line that concerns the INFO field"
   [m ait]
-  (map #(extract-info-value (get m "INFO") %) ait))
+  (let [info-map (create-map-for-info (get m "INFO"))]
+    (map #(get info-map % "") ait)))
 
 (defn get-line-part-sample
   "Create the part of the output line that concerns a single sample"
