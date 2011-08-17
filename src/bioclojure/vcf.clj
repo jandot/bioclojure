@@ -84,7 +84,7 @@
            ; => {\"NS\" \"58\", \"DP\" \"258\", \"AF\" \"0.786\", \"DB\" \"1\", \"H2\" \"1\"}"
   [line]
   (let [fields (str/split line #";")]
-    (apply hash-map (clojure.core/flatten (map #(str/split % #"=") (map #(make-tag-value %) fields))))))
+    (into {} (map #(str/split % #"=") (map #(make-tag-value %) fields)))))
 
 (defn extract-data
   [filename cn]
@@ -151,7 +151,7 @@
   [sample m aft]
   (let [sample-data (str/split (get m sample) #":")
         sample-tags (str/split (get m "FORMAT") #":")
-        sample-map (apply hash-map (interleave sample-tags sample-data))]
+        sample-map (zipmap sample-tags sample-data)]
     (map #(get sample-map % "") aft)))
 
 (defn get-line-part-all-samples
