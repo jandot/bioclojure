@@ -5,10 +5,12 @@
 )
 
 (defn- parse-string [value]
-  (try (Integer/parseInt value)
-    (catch NumberFormatException _
-      (try (Double/parseDouble value)
-        (catch NumberFormatException _ value)))))
+  (cond (re-matches #"[0-9]+" value)
+	    (Integer/parseInt value)
+	(re-matches  #"[1-9][0-9]*\.?[0-9]*([Ee][+-]?[0-9]+)?" value)
+	    (Double/parseDouble value)
+	:else
+	    value))
 
 (defn is-comment?
   "Checks if argument is a comment (i.e. starts with a '#').
