@@ -5,10 +5,12 @@
 )
 
 (defn- parse-string [value]
-  (try (Integer/parseInt value)
-    (catch NumberFormatException _
-      (try (Double/parseDouble value)
-        (catch NumberFormatException _ value)))))
+  (cond (re-matches #"[0-9]+" value)
+	    (Integer/parseInt value)
+	(re-matches  #"[1-9][0-9]*\.?[0-9]*([Ee][+-]?[0-9]+)?" value)
+	    (Double/parseDouble value)
+	:else
+	    value))
 
 (defn is-comment?
   "Checks if argument is a comment (i.e. starts with a '#').
@@ -72,6 +74,13 @@
   [s]
   (str/replace s #"^([^=]+)$" #(str (% 1) "=true")))
 
+(defn- info-split [^String s]
+  "Splits an info entry into tag and value, setting value to 1 if not present."
+  (let [idx (.indexOf s 61)] 
+    (if (> idx 0)
+      [(.substring s 0 idx) (.substring s (+ idx 1))]
+      [s "true"])))
+
 (defn create-map-for-info
   "Takes a string representing the INFO column for one variation and returns a 
   map of tag-value pairs. Tags that do not have a value (e.g. H2) are assigned
@@ -82,7 +91,7 @@
            ; => {\"NS\" \"58\", \"DP\" \"258\", \"AF\" \"0.786\", \"DB\" \"1\", \"H2\" \"1\"}"
   [line]
   (let [fields (str/split line #";")]
-    (apply hash-map (clojure.core/flatten (map #(str/split % #"=") (map #(make-tag-value %) fields))))))
+    (into {} (map info-split fields))))
 
 (defn extract-data
   [filename cn]
@@ -139,17 +148,22 @@
   [filename data sn aft]
   (for [s sn t aft] (str s "-" t)))
 
+; (defn get-line-part-info
+;  "Create the part of the output line that concerns the INFO field"
+;  [m ait]
+;  (map #(extract-info-value (get m "INFO") %) ait))
+
 (defn get-line-part-info
-  "Create the part of the output line that concerns the INFO field"
   [m ait]
-  (map #(extract-info-value (get m "INFO") %) ait))
+  (let [info-map (create-map-for-info (get m "INFO"))]
+    (map #(get info-map % "") ait)))
 
 (defn get-line-part-sample
   "Create the part of the output line that concerns a single sample"
   [sample m aft]
   (let [sample-data (str/split (get m sample) #":")
         sample-tags (str/split (get m "FORMAT") #":")
-        sample-map (apply hash-map (interleave sample-tags sample-data))]
+        sample-map (zipmap sample-tags sample-data)]
     (map #(get sample-map % "") aft)))
 
 (defn get-line-part-all-samples
