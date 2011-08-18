@@ -3,3 +3,4 @@ classes/
 *_nogit
 *.swp
 bioclojure*.jar
+*~
