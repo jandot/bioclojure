@@ -5,12 +5,14 @@
 (ns bioclojure
   (:use [incanter core io stats charts]
         [bioclojure.vcf]
-        [bioclojure.fastq])
+        [bioclojure.fastq]
+        [bioclojure.nucleotide-db]
+        [bioclojure.translation])
   (:gen-class)
 )
 
 (def help-string
-  "The bioclojure command takes a list of arguments. The first one is always the 
+  "The bioclojure command takes a list of arguments. The first one is always the
   command that should be run, for example: 'java -jar bioclojure.jar say-hi'. There
   might be additional arguments that will act as the input for the command that
   is selected. Try:
